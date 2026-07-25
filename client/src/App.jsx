@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ClanChiefRoute from './components/ClanChiefRoute';
 import LoadingScreen from './components/LoadingScreen';
 import ThemeToggle from './components/ThemeToggle';
+import CommandCenter from './components/CommandCenter';
 import NotificationListener from './components/NotificationListener';
 import { useAuth } from './context/useAuth';
 
@@ -55,7 +56,8 @@ function App() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="app-container">
-        <div className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-[60]">
+        <div className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-[60] flex flex-col gap-3 items-end">
+          <CommandCenter />
           <ThemeToggle />
         </div>
         <NotificationListener />

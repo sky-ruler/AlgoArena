@@ -432,6 +432,11 @@ const CodeEditor = ({
     editorRef.current = editor;
     monacoRef.current = monaco;
 
+    // Dispatch global run-code-shortcut event on Ctrl/Cmd + Enter
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      window.dispatchEvent(new CustomEvent("run-code-shortcut"));
+    });
+
     // Enable Monaco's built-in JS/TS diagnostics (syntax + semantic errors)
     monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
       noSyntaxValidation: false,

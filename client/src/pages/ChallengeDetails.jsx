@@ -175,6 +175,32 @@ const ChallengeDetails = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Ref-based handler to prevent closure staleness on shortcut events
+  const handleRunRef = useRef(handleRun);
+  useEffect(() => {
+    handleRunRef.current = handleRun;
+  });
+
+  useEffect(() => {
+    const handleRunShortcut = () => {
+      handleRunRef.current();
+    };
+
+    const handleGlobalKeydown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleRunRef.current();
+      }
+    };
+
+    window.addEventListener("run-code-shortcut", handleRunShortcut);
+    window.addEventListener("keydown", handleGlobalKeydown);
+    return () => {
+      window.removeEventListener("run-code-shortcut", handleRunShortcut);
+      window.removeEventListener("keydown", handleGlobalKeydown);
+    };
+  }, []);
+
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
