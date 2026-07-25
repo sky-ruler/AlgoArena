@@ -1,0 +1,298 @@
+import React, { useMemo } from "react";
+import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiActivity, FiCpu, FiArrowRight, FiCalendar, FiZap, FiMapPin, FiLink, FiGithub, FiTwitter, FiX } from "react-icons/fi";
+import { api } from "../lib/api";
+import { useAuth } from "../context/useAuth";
+import SkeletonCard from "../components/SkeletonCard";
+import ProfileSidebar from "../components/ProfileSidebar";
+import ActivityHeatmap from "../components/ActivityHeatmap";
+
+
+const fd = (delay = 0) => ({
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, delay, ease: "easeOut" },
+});
+
+const DiffBar = ({ label, solved, total, color }) => {
+  const pct = total > 0 ? (solved / total) * 100 : 0;
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between items-center">
+        <span className="text-[10px] font-black tracking-widest uppercase" style={{ color }}>{label}</span>
+        <span className="text-[10px] font-mono text-tertiary">{solved}<span className="text-tertiary/50">/{total}</span> <span className="text-black/20 dark:text-white/20 ml-1">{Math.round(pct)}%</span></span>
+      </div>
+      <div className="h-1.5 rounded-full bg-black/[0.05] dark:bg-white/[0.05] overflow-hidden">
+        <motion.div className="h-full rounded-full"
+          style={{ background: color, boxShadow: `0 0 8px ${color}55` }}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 1.2, ease: "easeOut" }} />
+      </div>
+    </div>
+  );
+};
+
+import MasteryPieChart from '../components/MasteryPieChart';
+
+const PRESTIGE_ORDER = { LEGENDARY: 3, EPIC: 2, RARE: 1, COMMON: 0 };
+
+const RARITY = {
+  COMMON: { border: "#334155", bg: "#1e293b" },
+  RARE: { border: "#3b82f6", bg: "#1e3a5f" },
+  EPIC: { border: "#a855f7", bg: "#3b1f6e" },
+  LEGENDARY: { border: "#facc15", bg: "#422006" },
+};
+
+const Profile = () => {
+  const { user } = useAuth();
+  const { username } = useParams();
+  const [showAllSubs, setShowAllSubs] = React.useState(false);
+
+  const profileQ = useQuery({
+    queryKey: ["full-profile-stats", username || "me"],
+    queryFn: async () => {
+      const endpoint = username
+        ? `/api/profile/username/${username}`
+        : `/api/profile/stats`;
+      const res = await api.get(endpoint);
+      return res.data.data;
+    },
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
+  });
+
+  const subsQ = useQuery({
+    queryKey: ["full-profile-submissions", username || "me"],
+    queryFn: async () => {
+      const endpoint = username
+        ? `/api/submissions/user/${username}?limit=100`
+        : `/api/submissions/my-submissions?limit=100`;
+      const res = await api.get(endpoint);
+      return res.data.data || [];
+    },
+    refetchInterval: 60000,
+    refetchIntervalInBackground: false,
+  });
+
+  const submissions = useMemo(() => subsQ.data || [], [subsQ.data]);
+
+  const recentSubs = useMemo(() => {
+    return [...submissions].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)).slice(0, 10);
+  }, [submissions]);
+
+  const profile = profileQ.data || {};
+  const displayUser = username ? profile : user;
+
+  const topBadges = useMemo(() => {
+    const list = profile?.badges || [];
+    return list
+      .filter(b => b.isUnlocked)
+      .sort((a, b) => (PRESTIGE_ORDER[b.rarity] || 0) - (PRESTIGE_ORDER[a.rarity] || 0))
+      .slice(0, 3);
+  }, [profile?.badges]);
+
+  if (profileQ.isLoading || subsQ.isLoading) {
+    return (
+      <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8">
+        <SkeletonCard className="w-full lg:w-72 h-[600px] !rounded-2xl shrink-0" />
+        <div className="flex-1 space-y-6">
+          <SkeletonCard className="w-full h-32 !rounded-2xl" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <SkeletonCard className="w-full h-48 !rounded-2xl" />
+            <SkeletonCard className="w-full h-48 !rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const easy = profile?.difficultyBreakdown?.easy ?? { solved: 0, total: 0 };
+  const medium = profile?.difficultyBreakdown?.medium ?? { solved: 0, total: 0 };
+  const hard = profile?.difficultyBreakdown?.hard ?? { solved: 0, total: 0 };
+
+  const solved = profile?.stats?.acceptedCount ?? profile?.acceptedCount ?? 0;
+  const total = (easy.total + medium.total + hard.total) || 1;
+  const solvedPct = Math.round((solved / total) * 100);
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-6 pb-12">
+
+      <ProfileSidebar user={displayUser} profile={profile} badges={profile?.badges} />
+
+      <div className="flex-1 min-w-0 space-y-4">
+        <motion.div {...fd(0.1)} className="relative overflow-hidden rounded-2xl p-6 border border-black/[0.08] dark:border-white/[0.08] bg-gradient-to-br from-[var(--bg-sidebar)] to-[var(--glass-surface)] shadow-md shrink-0">
+          <div className="absolute top-0 right-0 p-4 text-right z-10">
+            <div className="px-3 py-1.5 rounded-full bg-accent/20 border border-accent/20 flex items-center gap-2">
+              <FiZap className="text-accent text-sm" />
+              <span className="text-xs font-black text-primary">{profile?.stats?.totalPoints ?? profile?.totalPoints ?? 0} XP</span>
+            </div>
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3.5 mb-2 flex-wrap">
+              <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-b from-primary to-secondary bg-clip-text text-transparent leading-none">{displayUser?.username}</h1>
+              {topBadges.length > 0 && (
+                <div className="flex items-center gap-1.5  px-2 py-1">
+                  {topBadges.map((badge) => (
+                    <div
+                      key={badge._id}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-base border cursor-help shadow-sm transition-transform hover:scale-110"
+                      title={`${badge.name} (${badge.rarity}) — ${badge.description || ""}`}
+                      style={{
+                        background: RARITY[badge.rarity]?.bg || "#1e293b",
+                        borderColor: RARITY[badge.rarity]?.border || "#334155",
+                      }}
+                    >
+                      {badge.icon}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <p className="text-sm text-secondary max-w-md">
+              {username ? `Viewing ${displayUser?.username}'s public profile.` : "Track your journey, analyze your performance, and dominate the algorithm arena."}
+            </p>
+          </div>
+        </motion.div>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 shrink-0">
+          <motion.div {...fd(0.15)} className="rounded-2xl border border-black/[0.06] dark:border-white/[0.06] bg-[var(--glass-surface)] shadow-md p-6 flex flex-col">
+            <h2 className="text-xs font-black uppercase tracking-widest text-primary mb-2">Algorithm Mastery</h2>
+            <MasteryPieChart easy={easy} medium={medium} hard={hard} total={total} solvedPct={solvedPct} />
+          </motion.div>
+
+          <motion.div {...fd(0.2)} className="rounded-2xl border border-black/[0.06] dark:border-white/[0.06] bg-[var(--glass-surface)] shadow-md p-5 overflow-hidden flex flex-col justify-center">
+            <ActivityHeatmap submissions={submissions} />
+          </motion.div>
+        </div>
+
+        <motion.div {...fd(0.25)} className="rounded-2xl border border-black/[0.06] dark:border-white/[0.06] bg-[var(--glass-surface)] shadow-md overflow-hidden flex flex-col h-[380px]">
+          <div className="p-4 border-b border-black/[0.06] dark:border-b-white/[0.06] flex items-center justify-between shrink-0">
+            <h2 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+              <FiActivity className="text-accent" /> Recent Submissions
+            </h2>
+            <button onClick={() => setShowAllSubs(true)} className="text-[10px] font-bold text-accent hover:text-accent/80 uppercase tracking-wider flex items-center gap-1 bg-accent/10 px-2 py-1 rounded">
+              View All <FiArrowRight size={10} />
+            </button>
+          </div>
+
+          <div className="overflow-y-auto flex-1 custom-scrollbar">
+            {recentSubs.length === 0 ? (
+              <div className="p-10 text-center h-full flex flex-col items-center justify-center">
+                <FiCpu size={32} className="text-black/10 dark:text-white/10 mx-auto mb-3" />
+                <p className="text-xs font-bold text-tertiary uppercase tracking-widest">No recent submissions</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-black/[0.04] dark:divide-white/[0.04] pb-4">
+                {recentSubs.map((sub, i) => {
+                  const ac = sub.status === "Accepted";
+                  const wa = sub.status === "Rejected";
+                  const badgeCls = ac
+                    ? "bg-green-500/10 text-green-400 border-green-500/20"
+                    : wa
+                      ? "bg-red-500/10 text-red-400 border-red-500/20"
+                      : "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
+                  const badgeLabel = ac ? "ACCEPTED" : wa ? "REJECTED" : "PENDING";
+
+                  return (
+                    <Link key={sub._id + i} to={`/submission/${sub._id}`} className="flex items-center justify-between p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group">
+                      <div className="min-w-0 pr-4">
+                        <p className="text-sm font-bold text-primary group-hover:text-accent transition-colors truncate">
+                          {sub.challengeId?.title || "Unknown Challenge"}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-mono text-tertiary">
+                            {new Date(sub.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          <span className="text-[10px] text-tertiary">•</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-secondary">{sub.language}</span>
+                        </div>
+                      </div>
+                      <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border shrink-0 ${badgeCls}`}>
+                        {badgeLabel}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+      </div>
+
+      <AnimatePresence>
+        {showAllSubs && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-3xl max-h-[85vh] bg-[var(--bg-sidebar)] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            >
+              <div className="p-5 border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between bg-[var(--glass-surface)] shrink-0">
+                <h2 className="text-lg font-black text-primary flex items-center gap-2">
+                  <FiActivity className="text-accent" /> All Submissions
+                  <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full font-bold ml-2">
+                    {submissions.length}
+                  </span>
+                </h2>
+                <button
+                  onClick={() => setShowAllSubs(false)}
+                  className="p-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-secondary transition-colors"
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto flex-1 p-2 sm:p-4 custom-scrollbar">
+                {submissions.length === 0 ? (
+                  <div className="p-10 text-center">
+                    <FiCpu size={32} className="text-black/10 dark:text-white/10 mx-auto mb-3" />
+                    <p className="text-xs font-bold text-tertiary uppercase tracking-widest">No submissions found</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {submissions.map((sub, i) => {
+                      const ac = sub.status === "Accepted";
+                      const wa = sub.status === "Rejected";
+                      const badgeCls = ac
+                        ? "bg-green-500/10 text-green-400 border-green-500/20"
+                        : wa
+                          ? "bg-red-500/10 text-red-400 border-red-500/20"
+                          : "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
+                      const badgeLabel = ac ? "ACCEPTED" : wa ? "REJECTED" : "PENDING";
+
+                      return (
+                        <Link key={sub._id + i} to={`/submission/${sub._id}`} className="flex items-center justify-between p-4 rounded-xl border border-black/[0.04] dark:border-white/[0.04] bg-[var(--glass-surface)] hover:border-accent/40 transition-colors group">
+                          <div className="min-w-0 pr-4">
+                            <p className="text-sm font-bold text-primary group-hover:text-accent transition-colors truncate">
+                              {sub.challengeId?.title || "Unknown Challenge"}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] font-mono text-tertiary">
+                                {new Date(sub.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                              <span className="text-[10px] text-tertiary">•</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-secondary">{sub.language}</span>
+                            </div>
+                          </div>
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border shrink-0 ${badgeCls}`}>
+                            {badgeLabel}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default Profile;

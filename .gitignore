@@ -1,0 +1,17 @@
+node_modules
+.vercel
+.DS_Store
+.env
+.env.*
+!.env.example
+brain/
+.github/
+.impeccable/
+.vscode/
+server/DEPLOYMENT_NOTES.md
+CLAUDE.MD
+.playwright-mcp/
+docs/
+.superpowers/sdd/
+.claude/
+CLAUDE.md
