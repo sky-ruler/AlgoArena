@@ -1276,6 +1276,71 @@ test('daily login XP logic awards XP on the first /me call after onboarding is c
   assert.equal(logsCount2, 1);
 });
 
+test('banning, unbanning, and warning users records entries in AuditLog', async () => {
+  const AuditLog = require('../src/models/AuditLog');
+  const admin = await registerUser({
+    username: 'admin_audit_test',
+    email: 'admin.audit.test@example.com',
+  });
+  await User.findByIdAndUpdate(admin.id, { role: 'admin' });
+
+  // Login as admin to get fresh token
+  const adminLogin = await request(app).post('/api/auth/login').send({
+    email: 'admin.audit.test@example.com',
+    password: 'strong-password',
+  });
+  const adminToken = adminLogin.body.data.token;
+
+  const targetUser = await registerUser({
+    username: 'target_audit_user',
+    email: 'target.audit.user@example.com',
+  });
+
+  // 1. Ban the target user
+  const banRes = await request(app)
+    .put(`/api/users/${targetUser.id}/ban`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send();
+
+  assert.equal(banRes.status, 200);
+
+  // Check AuditLog for BAN_USER
+  const banLog = await AuditLog.findOne({ action: 'BAN_USER', targetUserId: targetUser.id }).sort({ _id: -1 });
+  assert.ok(banLog, 'BAN_USER log should be recorded');
+  assert.equal(banLog.performedBy.toString(), admin.id);
+  assert.equal(banLog.previousValue, 'Active');
+  assert.equal(banLog.newValue, 'Banned');
+
+  // 2. Unban the target user
+  const unbanRes = await request(app)
+    .put(`/api/users/${targetUser.id}/unban`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send();
+
+  assert.equal(unbanRes.status, 200);
+
+  // Check AuditLog for UNBAN_USER
+  const unbanLog = await AuditLog.findOne({ action: 'UNBAN_USER', targetUserId: targetUser.id }).sort({ _id: -1 });
+  assert.ok(unbanLog, 'UNBAN_USER log should be recorded');
+  assert.equal(unbanLog.performedBy.toString(), admin.id);
+  assert.equal(unbanLog.previousValue, 'Banned');
+  assert.equal(unbanLog.newValue, 'Active');
+
+  // 3. Warn the target user
+  const warnRes = await request(app)
+    .post(`/api/users/${targetUser.id}/warn`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ message: 'Warning for test' });
+
+  assert.equal(warnRes.status, 200);
+
+  // Check AuditLog for WARN_USER
+  const warnLog = await AuditLog.findOne({ action: 'WARN_USER', targetUserId: targetUser.id }).sort({ _id: -1 });
+  assert.ok(warnLog, 'WARN_USER log should be recorded');
+  assert.equal(warnLog.performedBy.toString(), admin.id);
+  assert.equal(warnLog.previousValue, 'Active');
+  assert.equal(warnLog.newValue, 'Warned');
+});
 
 
 
