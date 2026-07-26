@@ -25,10 +25,10 @@ test.before(async () => {
   process.env.MONGO_URI = mongoServer.getUri();
 
   ({ app } = require('../server'));
-  User = require('../src/features/users/User.model.js');
-  Clan = require('../src/features/clans/Clan.model.js');
-  Submission = require('../src/features/submissions/Submission.model.js');
-  RefreshToken = require('../src/features/auth/RefreshToken.model.js');
+  User = require('../src/models/User');
+  Clan = require('../src/models/Clan');
+  Submission = require('../src/models/Submission');
+  RefreshToken = require('../src/models/RefreshToken');
 
   await mongoose.connect(process.env.MONGO_URI);
 });
@@ -43,7 +43,7 @@ test.after(async () => {
 test.beforeEach(async () => {
   await clearDatabase();
   try {
-    const { clearChiefClanCache } = require('../src/features/clans/clanScope.service.js');
+    const { clearChiefClanCache } = require('../src/services/clanScope.service');
     clearChiefClanCache();
   } catch (err) {
     // Ignore
@@ -815,7 +815,7 @@ test('leaderboard window=all pagination, tie-breaking, and topThree calculation 
 
 test('getMySubmissions default limit defaults to 100', async () => {
   const user = await registerUser({ username: 'submit_limit_user', email: 'submit_limit@example.com' });
-  const Challenge = require('../src/features/challenges/Challenge.model.js');
+  const Challenge = require('../src/models/Challenge');
   const challenge = await Challenge.create({
     title: 'Limit Test Challenge',
     description: 'Test limit',
@@ -844,7 +844,7 @@ test('getMySubmissions default limit defaults to 100', async () => {
 });
 
 test('getChallenges uses text index search correctly', async () => {
-  const Challenge = require('../src/features/challenges/Challenge.model.js');
+  const Challenge = require('../src/models/Challenge');
   await Challenge.createIndexes(); // Force-compile indexes
 
   await Challenge.create([
@@ -905,7 +905,7 @@ test('clan chief lookup is cached and behaves correctly on mutations', async () 
   assert.equal(addMemberRes.status, 200);
 
   // 5. Act as chief to populate cache
-  const { getActorMemberIdsInScope } = require('../src/features/clans/clanScope.service.js');
+  const { getActorMemberIdsInScope } = require('../src/services/clanScope.service');
   // Get updated chief user object with role 'clan-chief'
   const chiefActor = await User.findById(chiefUser.id).lean();
   
@@ -925,7 +925,7 @@ test('clan chief lookup is cached and behaves correctly on mutations', async () 
 
 test('getChallenges and getSubmissions limit parameter clamping', async () => {
   const user = await registerUser({ username: 'clamp_user', email: 'clamp@example.com' });
-  const Challenge = require('../src/features/challenges/Challenge.model.js');
+  const Challenge = require('../src/models/Challenge');
   
   // Seed 105 challenges
   const challengesData = Array.from({ length: 105 }, (_, i) => ({
@@ -977,7 +977,7 @@ test('getChallenges and getSubmissions limit parameter clamping', async () => {
 });
 
 test('getAdminDashboardSummary calculates live completions and avgCompletion', async () => {
-  const Challenge = require('../src/features/challenges/Challenge.model.js');
+  const Challenge = require('../src/models/Challenge');
 
   const admin = await registerUser({ username: 'admin_dashboard_test', email: 'admin_dashboard@example.com' });
   await User.findByIdAndUpdate(admin.id, { role: 'admin' });
@@ -1055,8 +1055,8 @@ test('getAdminDashboardSummary calculates live completions and avgCompletion', a
 });
 
 test('getMySetAnalytics returns per-set completion, excludes the chief, and picks the closest active set', async () => {
-  const Challenge = require('../src/features/challenges/Challenge.model.js');
-  const QuestionSet = require('../src/features/challenges/QuestionSet.model.js');
+  const Challenge = require('../src/models/Challenge');
+  const QuestionSet = require('../src/models/QuestionSet');
 
   const admin = await registerUser({ username: 'admin_setan', email: 'admin_setan@example.com' });
   await User.findByIdAndUpdate(admin.id, { role: 'admin' });
@@ -1228,7 +1228,7 @@ test('getClanLeaderboard window=all aggregates points and solved problems correc
 });
 
 test('daily login XP logic awards XP on the first /me call after onboarding is completed today', async () => {
-  const XpLog = require('../src/features/users/XpLog.model.js');
+  const XpLog = require('../src/models/XpLog');
   const { signAccessToken } = require('../utils/tokens');
 
   // Create a brand new Google user with usernameSet = false

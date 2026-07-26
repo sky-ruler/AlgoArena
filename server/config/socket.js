@@ -2,7 +2,7 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const { logger } = require('../utils/logger');
 const { env } = require('./env');
-const User = require('../src/features/users/User.model');
+const User = require('../src/models/User');
 
 let io;
 

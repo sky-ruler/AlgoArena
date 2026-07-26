@@ -1,4 +1,4 @@
-const AuditLog = require('../src/features/audit/AuditLog.model');
+const AuditLog = require('../src/models/AuditLog');
 const { logger } = require('./logger');
 
 const logAudit = async ({ action, actorId, targetType, targetId, metadata }) => {

@@ -50,7 +50,7 @@ const BADGES = [
 ];
 
 mongoose.connect(process.env.MONGO_URI).then(async () => {
-  const Badge = require('./src/features/badges/Badge.model');
+  const Badge = require('./src/models/Badge');
   
   console.log('Clearing old badges...');
   await Badge.deleteMany({});
