@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken');
-const User = require('../src/features/users/User.model');
+const User = require('../src/models/User');
 const { env } = require('../config/env');
 const {
   canAccessAdminOnlyAction,
   canAccessChiefScopedAction,
-} = require('../src/features/auth/authorization.policy');
+} = require('../src/middleware/authorize');
 
 const userCache = new Map();
 const CACHE_TTL = process.env.NODE_ENV === 'test' ? 0 : 30 * 1000;

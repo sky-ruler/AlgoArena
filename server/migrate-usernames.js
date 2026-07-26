@@ -1,6 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const User = require('./src/features/users/User.model');
+const User = require('./src/models/User');
 
 mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/algoarena')
   .then(async () => {

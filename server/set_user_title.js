@@ -11,7 +11,7 @@ if (!username || !title) {
 }
 
 mongoose.connect(process.env.MONGO_URI).then(async () => {
-  const User = require('./src/features/users/User.model');
+  const User = require('./src/models/User');
   const result = await User.updateOne(
     { username },
     { $set: { customTitle: title === "null" || title === "none" ? "" : title } }

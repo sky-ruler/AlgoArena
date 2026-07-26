@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { env } = require('../../config/env');
 const { logger } = require('../../utils/logger');
-const Submission = require('../features/submissions/Submission.model');
+const Submission = require('../models/Submission');
 
 let intervalId = null;
 

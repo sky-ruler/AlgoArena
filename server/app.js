@@ -50,16 +50,16 @@ mongoose.plugin((schema) => {
   });
 });
 
-const authRoutes = require('./src/features/auth/auth.routes');
-const challengeRoutes = require('./src/features/challenges/challenge.routes');
-const questionSetRoutes = require('./src/features/challenges/questionSet.routes');
-const submissionRoutes = require('./src/features/submissions/submission.routes');
-const dashboardRoutes = require('./src/features/dashboard/dashboard.routes');
-const profileRoutes = require('./src/features/profile/profile.routes');
-const clanRoutes = require('./src/features/clans/clan.routes');
-const userRoutes = require('./src/features/users/user.routes');
-const resourceRoutes = require('./src/features/resources/resource.routes');
-const badgeRoutes = require('./src/features/badges/badge.routes');
+const authRoutes = require('./src/routes/auth.routes');
+const challengeRoutes = require('./src/routes/challenge.routes');
+const questionSetRoutes = require('./src/routes/questionSet.routes');
+const submissionRoutes = require('./src/routes/submission.routes');
+const dashboardRoutes = require('./src/routes/dashboard.routes');
+const profileRoutes = require('./src/routes/profile.routes');
+const clanRoutes = require('./src/routes/clan.routes');
+const userRoutes = require('./src/routes/user.routes');
+const resourceRoutes = require('./src/routes/resource.routes');
+const badgeRoutes = require('./src/routes/badge.routes');
 
 
 try {

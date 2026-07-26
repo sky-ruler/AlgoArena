@@ -1,4 +1,4 @@
-const Submission = require('../src/features/submissions/Submission.model');
+const Submission = require('../src/models/Submission');
 
 /**
  * Computes the rank of a single user using a DB-level pipeline.

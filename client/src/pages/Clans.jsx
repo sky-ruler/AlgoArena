@@ -447,7 +447,7 @@ const Clans = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch all clans
+  // Fetch all clans (lightweight query)
   const clansQuery = useQuery({
     queryKey: ['clans-list'],
     queryFn: async () => {
@@ -456,16 +456,26 @@ const Clans = () => {
     },
   });
 
+  // Fetch detailed info for a single clan dynamically upon preview (on-demand optimization)
+  const previewClanQuery = useQuery({
+    queryKey: ['clan-detail', previewClanId],
+    queryFn: async () => {
+      const res = await api.get(`/api/clans/${previewClanId}`);
+      return res.data.data || null;
+    },
+    enabled: !!previewClanId,
+    staleTime: 30000,
+  });
+
   useEffect(() => {
-    if (previewClanId && clansQuery.data) {
-      const clanToPreview = clansQuery.data.find(c => c._id === previewClanId);
-      if (clanToPreview && viewingOtherClan?._id !== previewClanId) {
-        setViewingOtherClan(clanToPreview);
+    if (previewClanId && previewClanQuery.data) {
+      if (viewingOtherClan?._id !== previewClanId) {
+        setViewingOtherClan(previewClanQuery.data);
       }
     } else if (!previewClanId && viewingOtherClan) {
       setViewingOtherClan(null);
     }
-  }, [previewClanId, clansQuery.data, viewingOtherClan]);
+  }, [previewClanId, previewClanQuery.data, viewingOtherClan]);
 
   const handleBackFromPreview = () => {
     if (previewClanId) {
@@ -592,7 +602,18 @@ const Clans = () => {
       />
 
       <AnimatePresence mode="wait">
-        {viewingOtherClan ? (
+        {previewClanId && previewClanQuery.isLoading ? (
+          <MotionDiv
+            key="loading-preview"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center justify-center p-20 rounded-3xl border border-black/[0.08] dark:border-white/[0.08] bg-[var(--glass-surface)] min-h-[300px]"
+          >
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent mb-4"></div>
+            <p className="text-sm text-secondary font-bold">Loading clan details...</p>
+          </MotionDiv>
+        ) : viewingOtherClan ? (
           <MotionDiv
             key="preview"
             initial={{ opacity: 0 }}

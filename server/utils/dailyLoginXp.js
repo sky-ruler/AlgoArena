@@ -1,4 +1,4 @@
-const XpLog = require('../src/features/users/XpLog.model');
+const XpLog = require('../src/models/XpLog');
 
 /**
  * Award 50 XP for the first login of the current UTC day (if the user has
