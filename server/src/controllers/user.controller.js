@@ -128,9 +128,21 @@ const warnUser = async (req, res, next) => {
       return res.status(403).json({ success: false, message: scopeCheck.reason || 'Not authorized' });
     }
 
+    const previousStatus = user.status || 'Active';
     user.status = 'Warned';
     user.warningMessage = message || 'Please improve your activity and adherence to clan rules.';
     await user.save();
+
+    // Create immutable Audit Log entry
+    const AuditLog = require('../models/AuditLog');
+    await AuditLog.create({
+      action: 'WARN_USER',
+      targetUserId: user._id,
+      performedBy: req.user._id,
+      previousValue: previousStatus,
+      newValue: 'Warned',
+      ip: req.ip || '',
+    });
 
     // Send warning email (non-blocking — don't crash if it fails)
     try {
@@ -211,8 +223,20 @@ const banUser = async (req, res, next) => {
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
     if (user.role === 'admin' || user.role === 'superAdmin') return res.status(400).json({ success: false, message: 'Cannot ban an admin' });
 
+    const previousStatus = user.status || 'Active';
     user.status = 'Banned';
     await user.save();
+
+    // Create immutable Audit Log entry
+    const AuditLog = require('../models/AuditLog');
+    await AuditLog.create({
+      action: 'BAN_USER',
+      targetUserId: user._id,
+      performedBy: req.user._id,
+      previousValue: previousStatus,
+      newValue: 'Banned',
+      ip: req.ip || '',
+    });
 
     return sendSuccess(res, { data: user, message: 'User has been banned' });
   } catch (err) {
@@ -228,8 +252,20 @@ const unbanUser = async (req, res, next) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
+    const previousStatus = user.status || 'Active';
     user.status = 'Active';
     await user.save();
+
+    // Create immutable Audit Log entry
+    const AuditLog = require('../models/AuditLog');
+    await AuditLog.create({
+      action: 'UNBAN_USER',
+      targetUserId: user._id,
+      performedBy: req.user._id,
+      previousValue: previousStatus,
+      newValue: 'Active',
+      ip: req.ip || '',
+    });
 
     return sendSuccess(res, { data: user, message: 'User has been unbanned' });
   } catch (err) {

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getBadges, getBadgesForUser, getBadgesForUsername, awardBadge, revokeBadge, getChiefBadges, getBadgesForUsersBatch } = require('../controllers/badge.controller');
-const { protect } = require('../../middleware/auth');
+const { protect, chiefOrAdmin } = require('../../middleware/auth');
 
 // Get own badges
 router.get('/', protect, getBadges);
@@ -10,16 +10,16 @@ router.get('/', protect, getBadges);
 router.post('/batch', protect, getBadgesForUsersBatch);
 
 // Get chief badge pool
-router.get('/chief', protect, getChiefBadges);
+router.get('/chief', protect, chiefOrAdmin, getChiefBadges);
 
 // Get badges for another user (profile)
 router.get('/user/:userId', protect, getBadgesForUser);
 router.get('/username/:username', getBadgesForUsername);
 
 // Award a chief badge to a member
-router.post('/award/:userId', protect, awardBadge);
+router.post('/award/:userId', protect, chiefOrAdmin, awardBadge);
 
 // Revoke a chief badge from a member
-router.delete('/revoke/:userId/:badgeId', protect, revokeBadge);
+router.delete('/revoke/:userId/:badgeId', protect, chiefOrAdmin, revokeBadge);
 
 module.exports = router;
