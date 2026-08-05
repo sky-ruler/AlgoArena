@@ -1280,7 +1280,7 @@ test('daily login XP logic awards XP on the first /me call after onboarding is c
   assert.equal(logsCount2, 1);
 });
 
-test('express-mongo-sanitize filters query and body parameter injection', async () => {
+test('mongoSanitize filters query operator injection', async () => {
   const registerRes = await request(app).post('/api/auth/register').send({
     username: 'sanitize_test',
     email: 'sanitize@example.com',
