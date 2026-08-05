@@ -66,6 +66,10 @@ exports.awardBadge = async (req, res, next) => {
     const member = await User.findById(userId).select('clan');
     if (!member) return res.status(404).json({ success: false, message: 'User not found.' });
 
+    if (chief.role !== 'admin' && chief.role !== 'superAdmin' && chief.role !== 'clan-chief') {
+      return res.status(403).json({ success: false, message: 'Forbidden. Only clan chiefs or administrators can award badges.' });
+    }
+
     if (chief.role !== 'admin' && chief.role !== 'superAdmin') {
       if (userId.toString() === chief._id.toString()) {
         return res.status(403).json({ success: false, message: 'You cannot award a badge to yourself.' });
@@ -98,6 +102,10 @@ exports.revokeBadge = async (req, res, next) => {
     const chief = await User.findById(req.user.id).select('clan role');
     const member = await User.findById(userId).select('clan');
     if (!member) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    if (chief.role !== 'admin' && chief.role !== 'superAdmin' && chief.role !== 'clan-chief') {
+      return res.status(403).json({ success: false, message: 'Forbidden. Only clan chiefs or administrators can revoke badges.' });
+    }
 
     if (chief.role !== 'admin' && chief.role !== 'superAdmin') {
       if (!chief.clan || !member.clan || chief.clan.toString() !== member.clan.toString()) {

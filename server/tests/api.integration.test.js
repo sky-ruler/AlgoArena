@@ -1591,4 +1591,180 @@ test('banning, unbanning, and warning users records entries in AuditLog', async 
   assert.equal(warnLog.newValue, 'Warned');
 });
 
+test('express-mongo-sanitize filters query and body parameter injection', async () => {
+  const registerRes = await request(app).post('/api/auth/register').send({
+    username: 'sanitize_test',
+    email: 'sanitize@example.com',
+    password: 'strong-password',
+  });
+  assert.equal(registerRes.status, 201);
+  const token = registerRes.body.data.token;
+
+  // Attempt query injection
+  const res = await request(app)
+    .get('/api/challenges?difficulty[$gt]=')
+    .set('Authorization', `Bearer ${token}`);
+
+  assert.equal(res.status, 400);
+  assert.equal(res.body.success, false);
+  assert.equal(res.body.message, 'Validation failed');
+  assert.ok(Array.isArray(res.body.errors));
+  assert.ok(res.body.errors.some((e) => e.field === 'difficulty'));
+});
+
+test('Badge awarding and revoking enforces strict RBAC (only chief/admin, no self-awarding, no cross-clan)', async () => {
+  // Create a badge
+  const badge = await Badge.create({
+    name: 'Golden Keyboard',
+    icon: '🏆',
+    description: 'Awarded by Chief',
+    isChiefBadge: true,
+    rarity: 'RARE',
+  });
+
+  // Register admin
+  const admin = await registerUser({ username: 'badge_admin', email: 'badge_admin@example.com' });
+  await User.findByIdAndUpdate(admin.id, { role: 'admin' });
+
+  // Register Chief and Members
+  const chief = await registerUser({ username: 'badge_chief', email: 'badge_chief@example.com' });
+  const memberA = await registerUser({ username: 'badge_member_a', email: 'badge_member_a@example.com' });
+  const memberB = await registerUser({ username: 'badge_member_b', email: 'badge_member_b@example.com' });
+
+  // Create Clan Alpha
+  const clanRes = await request(app)
+    .post('/api/clans')
+    .set('Authorization', `Bearer ${admin.token}`)
+    .send({ name: 'Badge Clan Alpha', tag: 'BCAL' });
+  assert.equal(clanRes.status, 201);
+  const clanId = clanRes.body.data._id;
+
+  // Add chief and memberA to Clan Alpha
+  await request(app).post(`/api/clans/${clanId}/members`).set('Authorization', `Bearer ${admin.token}`).send({ userId: chief.id });
+  await request(app).post(`/api/clans/${clanId}/members`).set('Authorization', `Bearer ${admin.token}`).send({ userId: memberA.id });
+
+  // Assign chief role to chief
+  await request(app).put(`/api/clans/${clanId}/chief`).set('Authorization', `Bearer ${admin.token}`).send({ userId: chief.id });
+  await User.findByIdAndUpdate(chief.id, { role: 'clan-chief' });
+
+  // Member B is in no clan
+
+  // 1. Regular user (memberA) attempts to award badge to memberA (Self/same-clan bypass attempt)
+  const badAward1 = await request(app)
+    .post(`/api/badges/award/${memberA.id}`)
+    .set('Authorization', `Bearer ${memberA.token}`)
+    .send({ badgeId: badge._id });
+  assert.equal(badAward1.status, 403); // Blocked
+
+  // 2. Chief attempts to award badge to themselves
+  const badAwardSelf = await request(app)
+    .post(`/api/badges/award/${chief.id}`)
+    .set('Authorization', `Bearer ${chief.token}`)
+    .send({ badgeId: badge._id });
+  assert.equal(badAwardSelf.status, 403); // Blocked
+
+  // 3. Chief attempts to award badge to memberB (cross-clan attempt)
+  const badAwardCross = await request(app)
+    .post(`/api/badges/award/${memberB.id}`)
+    .set('Authorization', `Bearer ${chief.token}`)
+    .send({ badgeId: badge._id });
+  assert.equal(badAwardCross.status, 403); // Blocked
+
+  // 4. Chief awards badge to memberA (Valid!)
+  const goodAward = await request(app)
+    .post(`/api/badges/award/${memberA.id}`)
+    .set('Authorization', `Bearer ${chief.token}`)
+    .send({ badgeId: badge._id });
+  assert.equal(goodAward.status, 200);
+
+  const updatedMember = await User.findById(memberA.id);
+  assert.ok(updatedMember.awardedBadgeIds.some((id) => id.toString() === badge._id.toString()));
+
+  // 5. Regular user attempts to revoke badge
+  const badRevoke = await request(app)
+    .delete(`/api/badges/revoke/${memberA.id}/${badge._id}`)
+    .set('Authorization', `Bearer ${memberA.token}`);
+  assert.equal(badRevoke.status, 403);
+
+  // 6. Chief revokes badge (Valid!)
+  const goodRevoke = await request(app)
+    .delete(`/api/badges/revoke/${memberA.id}/${badge._id}`)
+    .set('Authorization', `Bearer ${chief.token}`);
+  assert.equal(goodRevoke.status, 200);
+
+  const revokedMember = await User.findById(memberA.id);
+  assert.ok(!revokedMember.awardedBadgeIds.includes(badge._id));
+});
+
+test('AuditLog immutability and administrative status actions logging', async () => {
+  // Register Admin
+  const admin = await registerUser({ username: 'audit_admin', email: 'audit_admin@example.com' });
+  await User.findByIdAndUpdate(admin.id, { role: 'admin' });
+
+  // Register a User
+  const user = await registerUser({ username: 'audit_target', email: 'audit_target@example.com' });
+
+  // 1. Admin warns user -> verify AuditLog entry
+  const warnRes = await request(app)
+    .post(`/api/users/${user.id}/warn`)
+    .set('Authorization', `Bearer ${admin.token}`)
+    .send({ message: 'Bad behaviour' });
+  assert.equal(warnRes.status, 200);
+
+  const warnLog = await AuditLog.findOne({ action: 'WARN_USER', targetUserId: user.id });
+  assert.ok(warnLog);
+  assert.equal(warnLog.performedBy.toString(), admin.id);
+  assert.equal(warnLog.newValue, 'Warned');
+
+  // 2. Admin clears warning -> verify AuditLog entry
+  const clearRes = await request(app)
+    .delete(`/api/users/${user.id}/warn`)
+    .set('Authorization', `Bearer ${admin.token}`);
+  assert.equal(clearRes.status, 200);
+
+  const clearLog = await AuditLog.findOne({ action: 'CLEAR_WARNING', targetUserId: user.id });
+  assert.ok(clearLog);
+  assert.equal(clearLog.newValue, 'Active');
+
+  // 3. Admin bans user -> verify AuditLog entry
+  const banRes = await request(app)
+    .put(`/api/users/${user.id}/ban`)
+    .set('Authorization', `Bearer ${admin.token}`);
+  assert.equal(banRes.status, 200);
+
+  const banLog = await AuditLog.findOne({ action: 'BAN_USER', targetUserId: user.id });
+  assert.ok(banLog);
+  assert.equal(banLog.newValue, 'Banned');
+
+  // 4. Admin unbans user -> verify AuditLog entry
+  const unbanRes = await request(app)
+    .put(`/api/users/${user.id}/unban`)
+    .set('Authorization', `Bearer ${admin.token}`);
+  assert.equal(unbanRes.status, 200);
+
+  const unbanLog = await AuditLog.findOne({ action: 'UNBAN_USER', targetUserId: user.id });
+  assert.ok(unbanLog);
+  assert.equal(unbanLog.newValue, 'Active');
+
+  // 5. Immutability checks: updating/deleting logs must fail
+  const logToModify = await AuditLog.findOne();
+  assert.ok(logToModify);
+
+  // save() update error
+  logToModify.newValue = 'Hacked';
+  await assert.rejects(
+    async () => {
+      await logToModify.save();
+    },
+    /Audit logs are immutable and cannot be updated/
+  );
+
+  // deleteOne query error
+  await assert.rejects(
+    async () => {
+      await AuditLog.deleteOne({ _id: logToModify._id });
+    },
+    /Audit logs are immutable and cannot be modified or deleted/
+  );
+});
 
