@@ -1360,7 +1360,11 @@ test('express-mongo-sanitize filters query and body parameter injection', async 
     .get('/api/challenges?difficulty[$gt]=')
     .set('Authorization', `Bearer ${token}`);
 
-  assert.ok(res.status === 200 || res.status === 400);
+  assert.equal(res.status, 400);
+  assert.equal(res.body.success, false);
+  assert.equal(res.body.message, 'Validation failed');
+  assert.ok(Array.isArray(res.body.errors));
+  assert.ok(res.body.errors.some((e) => e.field === 'difficulty'));
 });
 
 test('Badge awarding and revoking enforces strict RBAC (only chief/admin, no self-awarding, no cross-clan)', async () => {
