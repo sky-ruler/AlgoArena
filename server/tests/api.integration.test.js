@@ -1280,7 +1280,7 @@ test('daily login XP logic awards XP on the first /me call after onboarding is c
   assert.equal(logsCount2, 1);
 });
 
-test('mongoSanitize filters query operator injection', async () => {
+test('express-mongo-sanitize filters query and body parameter injection', async () => {
   const registerRes = await request(app).post('/api/auth/register').send({
     username: 'sanitize_test',
     email: 'sanitize@example.com',
@@ -1363,7 +1363,7 @@ test('Badge awarding and revoking enforces strict RBAC (only chief/admin, no sel
   assert.equal(goodAward.status, 200);
 
   const updatedMember = await User.findById(memberA.id);
-assert.ok(updatedMember.awardedBadgeIds.some((id) => id.equals(badge._id)));
+  assert.ok(updatedMember.awardedBadgeIds.includes(badge._id));
 
   // 5. Regular user attempts to revoke badge
   const badRevoke = await request(app)
