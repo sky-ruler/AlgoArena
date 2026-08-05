@@ -1363,7 +1363,7 @@ test('Badge awarding and revoking enforces strict RBAC (only chief/admin, no sel
   assert.equal(goodAward.status, 200);
 
   const updatedMember = await User.findById(memberA.id);
-  assert.ok(updatedMember.awardedBadgeIds.includes(badge._id));
+assert.ok(updatedMember.awardedBadgeIds.some((id) => id.equals(badge._id)));
 
   // 5. Regular user attempts to revoke badge
   const badRevoke = await request(app)
