@@ -72,6 +72,7 @@ try {
 const createApp = () => {
   const app = express();
   app.set('trust proxy', 1);
+  app.set('query parser', 'extended');
   const isNonProductionEnv = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
 
   // Keep Render keepalive traffic as cheap as possible by bypassing the
