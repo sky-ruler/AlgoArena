@@ -1,7 +1,7 @@
 const sanitize = (obj) => {
   if (obj && typeof obj === 'object') {
     Object.keys(obj).forEach((key) => {
-      if (key.startsWith('$')) {
+      if (key.startsWith('$') || key.includes('.')) {
         delete obj[key];
       } else if (obj[key] && typeof obj[key] === 'object') {
         sanitize(obj[key]);
