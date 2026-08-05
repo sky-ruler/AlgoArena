@@ -1,0 +1,4 @@
+## 2026-07-26 - [Missing Audit Trails on Admin User Status Modifications]
+**Vulnerability:** Critical administrative status mutation endpoints (`warnUser`, `banUser`, and `unbanUser`) lacked associated `AuditLog` records, whereas other endpoints like `clearWarningUser` or `updateUserRole` correctly logged modifications. This led to a gap in admin activity trails and non-repudiation.
+**Learning:** Even when robust security controls (like an immutable `AuditLog` system) are present in the codebase, the lack of centralized decorators or middleware can lead to human omission where similar endpoints are updated or created without the required auditing logic.
+**Prevention:** Always verify that every action mutating user access states or statuses (warn, ban, role changes) executes a corresponding immutable `AuditLog` entry. Consider centralizing audit log generation inside a service or model pre-save hook where appropriate.
