@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
+const mongoSanitize = require('./middleware/mongoSanitize');
 
 const { env } = require('./config/env');
 const { logger } = require('./utils/logger');
@@ -116,6 +117,7 @@ const createApp = () => {
     })
   );
   app.use(express.json({ limit: '10mb' }));
+  app.use(mongoSanitize());
   app.use(cookieParser());
 
   morgan.token('request-id', (req) => req.requestId);
