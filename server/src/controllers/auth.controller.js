@@ -92,6 +92,59 @@ const googleAuth = async (req, res, next) => {
   try {
     const { idToken } = req.body;
 
+    // Graceful fallback for local development if Firebase is not configured or if using a dev-token
+    if (process.env.NODE_ENV !== 'production' && (!firebaseAuth || idToken === 'dev-token-participant' || idToken === 'dev-token-admin')) {
+      console.warn('[DEVELOPMENT FALLBACK] Firebase Auth is not configured or dev-token detected. Authenticating developer mock user.');
+
+      const isAdmin = idToken === 'dev-token-admin';
+      const mockEmail = isAdmin ? 'devadmin@example.com' : 'devuser@example.com';
+      const mockUsername = isAdmin ? 'devadmin' : 'devuser';
+      const mockRole = isAdmin ? 'superAdmin' : 'user';
+
+      let user = await User.findOne({ email: mockEmail });
+      if (!user) {
+        user = await User.create({
+          username: mockUsername,
+          email: mockEmail,
+          role: mockRole,
+          name: isAdmin ? 'Developer Admin' : 'Developer User',
+          codingLevel: 'Advanced',
+          authProvider: 'google',
+          firebaseUid: isAdmin ? 'dev_mock_admin_uid' : 'dev_mock_user_uid',
+          usernameSet: true,
+        });
+      }
+
+      const accessToken = signAccessToken(user._id);
+      const refreshToken = generateRefreshToken();
+      const refreshTokenHash = hashToken(refreshToken);
+
+      await RefreshToken.create({
+        userId: user._id,
+        tokenHash: refreshTokenHash,
+        expiresAt: getRefreshTokenExpiry(),
+        ipAddress: req.ip || null,
+        userAgent: req.get('user-agent') || null,
+      });
+
+      setRefreshTokenCookie(res, refreshToken);
+
+      return sendSuccess(res, {
+        data: {
+          user: {
+            _id: user._id,
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            usernameSet: true,
+          },
+          token: accessToken,
+        },
+        message: 'Local development mock login successful'
+      });
+    }
+
     if (!firebaseAuth) {
       return res.status(503).json({ success: false, message: 'Firebase Auth is not configured' });
     }
