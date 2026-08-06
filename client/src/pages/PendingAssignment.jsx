@@ -44,7 +44,6 @@ const PendingAssignment = () => {
           <div className="space-y-3">
             {notices.map(notice => (
               <BaseCard key={notice._id} className="p-5 border-l-4 border-l-blue-500">
-                <h3 className="font-bold text-primary mb-1">{notice.title}</h3>
                 <p className="text-sm text-secondary">{notice.content}</p>
                 <div className="mt-3 text-[10px] uppercase font-black tracking-widest text-tertiary">
                   Transmitted on {new Date(notice.createdAt).toLocaleDateString()}
