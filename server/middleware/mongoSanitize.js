@@ -14,9 +14,27 @@ const sanitize = (obj) => {
 const mongoSanitize = () => {
   return (req, res, next) => {
     if (req) {
-      if (req.body) sanitize(req.body);
-      if (req.query) sanitize(req.query);
-      if (req.params) sanitize(req.params);
+      if (req.body) {
+        sanitize(req.body);
+      }
+      if (req.query) {
+        const sanitizedQuery = sanitize(JSON.parse(JSON.stringify(req.query)));
+        Object.defineProperty(req, 'query', {
+          value: sanitizedQuery,
+          writable: false,
+          configurable: false,
+          enumerable: true
+        });
+      }
+      if (req.params) {
+        const sanitizedParams = sanitize(JSON.parse(JSON.stringify(req.params)));
+        Object.defineProperty(req, 'params', {
+          value: sanitizedParams,
+          writable: true,
+          configurable: true,
+          enumerable: true
+        });
+      }
     }
     next();
   };
