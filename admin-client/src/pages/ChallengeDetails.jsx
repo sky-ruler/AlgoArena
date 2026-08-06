@@ -31,7 +31,6 @@ import { decodeReviewQueue, getQueueNav, buildReviewUrl } from "../lib/reviewQue
 import { useAuth } from "../context/useAuth";
 
 import {
-  normalizeOutput,
   displayExpected,
   argsToStdin,
   b64Encode,

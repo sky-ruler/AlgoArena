@@ -42,7 +42,7 @@ const envSchema = z
     COOKIE_SECURE: cookieSecureSchema,
     CORS_ORIGINS: z
       .string()
-      .default("http://localhost:5173,http://localhost:4173"),
+      .default("http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:4173"),
     FIREBASE_SERVICE_ACCOUNT_KEY: z.string().optional(),
     FIREBASE_SERVICE_ACCOUNT_KEY_FILE: z.string().optional(),
     SUPER_ADMIN_EMAIL: z.string().email().optional(),
