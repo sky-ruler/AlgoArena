@@ -61,6 +61,7 @@ const clanRoutes = require('./src/routes/clan.routes');
 const userRoutes = require('./src/routes/user.routes');
 const resourceRoutes = require('./src/routes/resource.routes');
 const badgeRoutes = require('./src/routes/badge.routes');
+const noticeRoutes = require('./src/routes/notice.routes');
 
 
 try {
@@ -154,6 +155,7 @@ const createApp = () => {
   app.use('/api/users', userRoutes);
   app.use('/api/resources', resourceRoutes);
   app.use('/api/badges', badgeRoutes);
+  app.use('/api/notices', noticeRoutes);
 
   app.use('/api/docs', express.static(path.join(__dirname, 'docs')));
 

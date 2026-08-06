@@ -20,6 +20,7 @@ const router = express.Router();
 
 router.post('/google', validate(googleAuthSchema), googleAuth);
 router.post('/refresh', validate(refreshSchema), refresh);
+router.get('/refresh', validate(refreshSchema), refresh);
 router.post('/logout', logout);
 router.post('/logout-all', protect, logoutAll);
 router.get('/me', protect, getMe);

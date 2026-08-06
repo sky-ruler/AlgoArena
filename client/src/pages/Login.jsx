@@ -116,6 +116,14 @@ const Login = ({ onLoginSuccess }) => {
       const idToken = await result.user.getIdToken();
       await handleAuthSuccess(idToken);
     } catch (err) {
+      // Local development fallback if Firebase/network fails
+      if (import.meta.env.DEV) {
+        console.warn('Google Sign-In failed or was skipped in local development. Using dev mock account...');
+        toast.success('Local Dev: Logging in with mock competitor account...');
+        await handleAuthSuccess('dev-token-participant');
+        return;
+      }
+
       // Don't show error if user just closed the popup
       if (err?.code === 'auth/popup-closed-by-user') {
         setLoading(false);

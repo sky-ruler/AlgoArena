@@ -208,8 +208,6 @@ const MembersTab = ({ initialClanFilter }) => {
     const rows = sortedUsers.map(u => {
       const activeClan = u.clan ? (clansQuery.data || []).find(c => c._id === u.clan || c._id === u.clan?._id) : null;
       const clanName = activeClan ? activeClan.name : 'Unassigned';
-      let status = 'Not Started';
-      if ((u.solvedProblems || 0) > 0) status = 'In Progress'; // Can't easily determine 'Completed all' globally without total question count
       
       return [
         `"${u.name || ''}"`,
