@@ -21,8 +21,8 @@ const mongoSanitize = () => {
         const sanitizedQuery = sanitize(JSON.parse(JSON.stringify(req.query)));
         Object.defineProperty(req, 'query', {
           value: sanitizedQuery,
-          writable: true,
-          configurable: true,
+          writable: false,
+          configurable: false,
           enumerable: true
         });
       }
