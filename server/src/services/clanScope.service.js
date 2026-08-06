@@ -15,24 +15,80 @@ const withSession = (query, session) => {
   return query.session(session);
 };
 
-const chiefClanCache = new Map(); // userId -> { clan, expiresAt }
-const CACHE_TTL = 60 * 1000; // 1 minute
+/**
+ * Extensible Cache Provider abstraction to address TD-003.
+ * Uses an asynchronous interface to allow seamless swappability with Redis/distributed caches.
+ * Handles negative-caching correctly (returns status object) to avoid cache stampedes/bypasses.
+ */
+class ChiefClanCacheProvider {
+  constructor() {
+    this.cache = new Map();
+    this.ttl = 60 * 1000; // 1 minute
+    this.maxSize = 5000;
+  }
+
+  async get(userId) {
+    const cached = this.cache.get(userId);
+    if (cached) {
+      if (cached.expiresAt > Date.now()) {
+        return { hit: true, value: cached.clan };
+      } else {
+        this.cache.delete(userId); // Evict expired key
+      }
+    }
+    return { hit: false };
+  }
+
+  async set(userId, clan) {
+    if (this.cache.size >= this.maxSize) {
+      // Prune expired keys first instead of wiping everything coarse-grainedly
+      const now = Date.now();
+      for (const [key, value] of this.cache.entries()) {
+        if (value.expiresAt <= now) {
+          this.cache.delete(key);
+        }
+      }
+      // If still exceeding size limits, evict oldest entry (FIFO)
+      if (this.cache.size >= this.maxSize) {
+        const oldestKey = this.cache.keys().next().value;
+        if (oldestKey) {
+          this.cache.delete(oldestKey);
+        }
+      }
+    }
+    this.cache.set(userId, {
+      clan,
+      expiresAt: Date.now() + this.ttl,
+    });
+  }
+
+  async delete(userId) {
+    if (userId) {
+      this.cache.delete(userId);
+    } else {
+      this.clear();
+    }
+  }
+
+  async clear() {
+    this.cache.clear();
+  }
+}
+
+const chiefClanCache = new ChiefClanCacheProvider();
 
 const clearChiefClanCache = (userId) => {
-  if (userId) {
-    chiefClanCache.delete(userId);
-  } else {
-    chiefClanCache.clear();
-  }
+  // Model pre-save hooks must call this synchronously or via fire-and-forget promise
+  chiefClanCache.delete(userId).catch(() => {});
 };
 
 const findChiefClan = async (userId, session = null) => {
   if (!userId) return null;
 
   if (!session) {
-    const cached = chiefClanCache.get(userId);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.clan;
+    const { hit, value } = await chiefClanCache.get(userId);
+    if (hit) {
+      return value;
     }
   }
 
@@ -40,11 +96,7 @@ const findChiefClan = async (userId, session = null) => {
   const clan = await withSession(query, session).lean();
 
   if (!session) {
-    if (chiefClanCache.size > 5000) chiefClanCache.clear();
-    chiefClanCache.set(userId, {
-      clan,
-      expiresAt: Date.now() + CACHE_TTL,
-    });
+    await chiefClanCache.set(userId, clan || null);
   }
 
   return clan || null;
