@@ -15,14 +15,48 @@ const withSession = (query, session) => {
   return query.session(session);
 };
 
-const chiefClanCache = new Map(); // userId -> { clan, expiresAt }
-const CACHE_TTL = 60 * 1000; // 1 minute
+class ChiefClanCacheProvider {
+  constructor(ttl = 60 * 1000) {
+    this.cache = new Map();
+    this.ttl = ttl;
+    this.maxSize = 5000;
+  }
 
-const clearChiefClanCache = (userId) => {
+  async get(userId) {
+    const cached = this.cache.get(userId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return { hit: true, value: cached.clan };
+    }
+    return { hit: false, value: undefined };
+  }
+
+  async set(userId, clan) {
+    if (this.cache.size >= this.maxSize) {
+      this.cache.clear();
+    }
+    this.cache.set(userId, {
+      clan,
+      expiresAt: Date.now() + this.ttl,
+    });
+  }
+
+  async delete(userId) {
+    this.cache.delete(userId);
+  }
+
+  async clear() {
+    this.cache.clear();
+  }
+}
+
+const CACHE_TTL = 60 * 1000; // 1 minute
+const chiefClanCache = new ChiefClanCacheProvider(CACHE_TTL);
+
+const clearChiefClanCache = async (userId) => {
   if (userId) {
-    chiefClanCache.delete(userId);
+    await chiefClanCache.delete(userId);
   } else {
-    chiefClanCache.clear();
+    await chiefClanCache.clear();
   }
 };
 
@@ -30,9 +64,9 @@ const findChiefClan = async (userId, session = null) => {
   if (!userId) return null;
 
   if (!session) {
-    const cached = chiefClanCache.get(userId);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.clan;
+    const { hit, value } = await chiefClanCache.get(userId);
+    if (hit) {
+      return value;
     }
   }
 
@@ -40,11 +74,7 @@ const findChiefClan = async (userId, session = null) => {
   const clan = await withSession(query, session).lean();
 
   if (!session) {
-    if (chiefClanCache.size > 5000) chiefClanCache.clear();
-    chiefClanCache.set(userId, {
-      clan,
-      expiresAt: Date.now() + CACHE_TTL,
-    });
+    await chiefClanCache.set(userId, clan || null);
   }
 
   return clan || null;
