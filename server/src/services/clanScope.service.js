@@ -15,24 +15,63 @@ const withSession = (query, session) => {
   return query.session(session);
 };
 
-const chiefClanCache = new Map(); // userId -> { clan, expiresAt }
-const CACHE_TTL = 60 * 1000; // 1 minute
+class ChiefClanCacheProvider {
+  constructor() {
+    this.cache = new Map(); // userId -> { value, expiresAt }
+    this.maxSize = 5000;
+    this.ttl = 60 * 1000; // 1 minute
+  }
+
+  async get(userId) {
+    if (!userId) return { hit: false, value: null };
+    const entry = this.cache.get(userId);
+    if (!entry) {
+      return { hit: false, value: null };
+    }
+    if (entry.expiresAt <= Date.now()) {
+      this.cache.delete(userId);
+      return { hit: false, value: null };
+    }
+    return { hit: true, value: entry.value };
+  }
+
+  async set(userId, value) {
+    if (!userId) return;
+    if (this.cache.size >= this.maxSize) {
+      this.cache.clear();
+    }
+    this.cache.set(userId, {
+      value,
+      expiresAt: Date.now() + this.ttl,
+    });
+  }
+
+  async delete(userId) {
+    if (userId) {
+      this.cache.delete(userId);
+    } else {
+      this.cache.clear();
+    }
+  }
+
+  async clear() {
+    this.cache.clear();
+  }
+}
+
+const cacheProvider = new ChiefClanCacheProvider();
 
 const clearChiefClanCache = (userId) => {
-  if (userId) {
-    chiefClanCache.delete(userId);
-  } else {
-    chiefClanCache.clear();
-  }
+  cacheProvider.delete(userId).catch(() => {});
 };
 
 const findChiefClan = async (userId, session = null) => {
   if (!userId) return null;
 
   if (!session) {
-    const cached = chiefClanCache.get(userId);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.clan;
+    const cached = await cacheProvider.get(userId);
+    if (cached.hit) {
+      return cached.value;
     }
   }
 
@@ -40,11 +79,7 @@ const findChiefClan = async (userId, session = null) => {
   const clan = await withSession(query, session).lean();
 
   if (!session) {
-    if (chiefClanCache.size > 5000) chiefClanCache.clear();
-    chiefClanCache.set(userId, {
-      clan,
-      expiresAt: Date.now() + CACHE_TTL,
-    });
+    await cacheProvider.set(userId, clan || null);
   }
 
   return clan || null;
@@ -167,4 +202,5 @@ module.exports = {
   getActorMemberIdsInScope,
   reconcileChiefRoleForUser,
   clearChiefClanCache,
+  cacheProvider,
 };

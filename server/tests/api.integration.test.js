@@ -927,6 +927,50 @@ test('clan chief lookup is cached and behaves correctly on mutations', async () 
   assert.ok(!members2.memberIds.includes(memberUser.id));
 });
 
+test('clan chief lookup implements negative caching to prevent database stampedes for non-chief users', async () => {
+  const { cacheProvider } = require('../src/services/clanScope.service');
+  const Clan = require('../src/models/Clan');
+
+  const regularUser = await registerUser({ username: 'regular_user_cache', email: 'regular_cache@example.com' });
+
+  // Clear cache first to ensure a clean state
+  await cacheProvider.clear();
+
+  // Spy on Clan.findOne
+  const originalFindOne = Clan.findOne;
+  let queryCount = 0;
+  Clan.findOne = function (...args) {
+    queryCount++;
+    return originalFindOne.apply(this, args);
+  };
+
+  try {
+    const { resolveActorScope } = require('../src/services/clanScope.service');
+
+    // 1. First lookup: User is a regular user, not a clan chief.
+    // Query should hit the database.
+    const actor = await User.findById(regularUser.id).lean();
+    actor.role = 'clan-chief'; // Set role temporarily so resolveActorScope actually performs findChiefClan
+
+    const scope1 = await resolveActorScope(actor);
+    assert.equal(scope1.kind, 'none');
+    assert.equal(queryCount, 1);
+
+    // Verify cache has cached the null value (negative caching)
+    const cached = await cacheProvider.get(regularUser.id);
+    assert.equal(cached.hit, true);
+    assert.equal(cached.value, null);
+
+    // 2. Second lookup: Query should resolve directly from the cache, database count must still be 1!
+    const scope2 = await resolveActorScope(actor);
+    assert.equal(scope2.kind, 'none');
+    assert.equal(queryCount, 1); // Query count must NOT increment
+  } finally {
+    // Restore original method
+    Clan.findOne = originalFindOne;
+  }
+});
+
 test('getChallenges and getSubmissions limit parameter clamping', async () => {
   const user = await registerUser({ username: 'clamp_user', email: 'clamp@example.com' });
   const Challenge = require('../src/models/Challenge');
