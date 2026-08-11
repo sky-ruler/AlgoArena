@@ -219,4 +219,5 @@ module.exports = {
   getActorMemberIdsInScope,
   reconcileChiefRoleForUser,
   clearChiefClanCache,
+  chiefClanCache: chiefClanCache,
 };
