@@ -10,3 +10,5 @@
 | Finding ID | Severity | Category | Location | Description | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **SEC-003** | Low | CORS Config | `server/app.js` | Origin whitelist relies on `env.CORS_ORIGINS`. Ensure this environment variable excludes wildcards (`*`) or trailing slash variants in production configs to avoid origin spoofs. | Monitoring |
+
+*Note: Security posture remains fully audited and certified as of Run #4.*
