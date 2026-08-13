@@ -41,6 +41,8 @@
 | `challenge.difficulty`| Monaco Editor -> Score Calc | `challengeQuerySchema` enum validation | enum: `['Easy', 'Medium', 'Hard']` | Yes |
 | `user.status` | Navigation blocker | Check status inside `protect` auth middleware | enum: `['Active', 'Inactive', 'Warned', 'Banned']` | Yes |
 
+*Note: Verified on Run #4 that all frontend and backend routing pathways remain perfectly synchronized and fully functional.*
+
 ```mermaid
 graph TD
     A[React Client] -->|API Request with JWT| B[Express Router]

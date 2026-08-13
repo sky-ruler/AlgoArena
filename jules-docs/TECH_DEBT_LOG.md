@@ -11,3 +11,4 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **TD-002** | P1 | Backend | `server/middleware/mongoSanitize.js` | Express 5 uses read-only property getters on request objects (`req.query`, `req.params`). Standard in-place modifications on these objects fail silently. Redefined with `Object.defineProperty` as a temporary robust fix, but a cleaner framework-agnostic approach is preferred long-term. | Open |
 | **TD-004** | P2 | Backend | `server/src/controllers/` | Inconsistent patterns for direct manual collection queries vs. abstract service wrapper usage. Standardizing on a repository or dedicated service layer would improve maintainability. | Open |
+| **TD-005** | P3 | Security | `server/src/controllers/challenge.controller.js` | Very rudimentary HTML parsing/stripping (`replace(/<[^>]*>/g, '')`) used in imported challenges. Integrating DOMPurify or sanitize-html would be a more robust choice. | Open |
