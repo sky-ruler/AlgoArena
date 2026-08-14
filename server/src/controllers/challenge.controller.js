@@ -183,7 +183,7 @@ const getChallenges = async (req, res, next) => {
 
 const getChallengeById = async (req, res, next) => {
   try {
-    const challenge = await Challenge.findById(req.params.id);
+    const challenge = await Challenge.findById(req.params.id).lean();
 
     if (!challenge) {
       res.status(404);
