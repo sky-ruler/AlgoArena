@@ -1390,7 +1390,7 @@ test('banning, unbanning, and warning users records entries in AuditLog', async 
   assert.equal(warnLog.newValue, 'Warned');
 });
 
-test('express-mongo-sanitize filters query and body parameter injection', async () => {
+test('express-mongo-sanitize filters query, body, and params parameter injection and prototype pollution', async () => {
   const registerRes = await request(app).post('/api/auth/register').send({
     username: 'sanitize_test',
     email: 'sanitize@example.com',
@@ -1409,6 +1409,33 @@ test('express-mongo-sanitize filters query and body parameter injection', async 
   assert.equal(res.body.message, 'Validation failed');
   assert.ok(Array.isArray(res.body.errors));
   assert.ok(res.body.errors.some((e) => e.field === 'difficulty'));
+
+  // Test middleware directly with a dummy request object
+  const mongoSanitize = require('../middleware/mongoSanitize');
+  const sanitizeMiddleware = mongoSanitize();
+  const mockReq = {
+    body: JSON.parse('{"normal": "val", "$gt": "hack", "nested": {"$ne": "bad", "__proto__": {"admin": true}, "constructor": "pollute"}}'),
+    query: JSON.parse('{"search": "test", "$where": "1==1", "__proto__": "pollute"}'),
+    params: { id: '123', $ne: '456' },
+  };
+  const mockRes = {};
+  let nextCalled = false;
+
+  sanitizeMiddleware(mockReq, mockRes, () => { nextCalled = true; });
+
+  assert.ok(nextCalled);
+  assert.equal(mockReq.body.$gt, undefined);
+  assert.equal(mockReq.body.nested.$ne, undefined);
+  assert.equal(mockReq.body.nested.__proto__, Object.prototype);
+  assert.equal(mockReq.body.nested.constructor, Object);
+  assert.equal(mockReq.query.$where, undefined);
+  assert.equal(mockReq.params.$ne, undefined);
+
+  // Verify re-assignability of req.query and req.params getters (Express 5 compatibility)
+  mockReq.query = { search: 'updated' };
+  assert.equal(mockReq.query.search, 'updated');
+  mockReq.params = { id: '789' };
+  assert.equal(mockReq.params.id, '789');
 });
 
 test('Badge awarding and revoking enforces strict RBAC (only chief/admin, no self-awarding, no cross-clan)', async () => {
