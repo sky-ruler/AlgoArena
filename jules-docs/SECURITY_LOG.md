@@ -4,7 +4,7 @@
 | Finding ID | Severity | Category | Location | Description | Status | Resolution / Action Taken |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **SEC-001** | Info | System | `Audit Required` | Awaiting initial security baseline scan | Completed | Conducted extensive security scan. Checked JWT signing keys, CORS options, and Cookie properties. |
-| **SEC-002** | High | Input Sanitization | `server/middleware/mongoSanitize.js` | Express 5 parses query and params dynamically using native getter properties. This caused standard in-place sanitization middlewares to mutate a temporary object, leaving the query keys un-sanitized for controllers and validators, causing NoSQL injection vulnerability on nested parameters. | Patched | Rewrote `mongoSanitize` middleware to use `Object.defineProperty` on Express 5's request object `query` and `params` getters, locking down sanitized, deep-cloned request attributes. Added explicit `app.set('query parser', 'extended')` in `app.js` to enforce consistent object-based query parsing across testing environments. |
+| **SEC-002** | High | Input Sanitization | `server/middleware/mongoSanitize.js` | Express 5 parses query and params dynamically using native getter properties. Standard in-place sanitization failed to mutate original getters or block array-level/constructor injections. | Patched | Upgraded `mongoSanitize` middleware to recursively scrub $, `__proto__`, and `constructor` keys across arrays, nested objects, `req.body`, `req.query`, and `req.params`. Redefined request attributes on Express 5 using `Object.defineProperty` with `writable: true` and `configurable: true`. |
 
 ## Pending / Open Security Review
 | Finding ID | Severity | Category | Location | Description | Status |
