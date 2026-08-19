@@ -716,34 +716,6 @@ samp,
     }
 }
 
-
-/* ==========================================================================
-   FONT CONFIGURATION AREA (Change your fonts here!)
-   ========================================================================== */
-
-/* 1. IMPORT GOOGLE FONTS & CUSTOM FONTS
-   Uncomment or add imports below to easily test different styling. */
-
-/* Default Stack Imports: Inter (Body), Michroma & Orbitron (Headings) */
-@import url("https://rsms.me/inter/inter.css");
-@import url('https://fonts.googleapis.com/css2?family=Michroma&family=Orbitron:wght@400..900&display=swap');
-
-/* Additional Alternative Premium Fonts (Pre-imported for easy testing): */
-/*
-   - Space Grotesk: Futuristic, clean, geometric heading font
-   - Outfit: Sleek, high-end, modern branding font
-   - Plus Jakarta Sans: Extremely premium and readable neo-grotesque body font
-   - JetBrains Mono: Gorgeous, clean developer monospaced code font
-   - Syne: Expressive, artistic headline font
-   - Montserrat: Bold, high-character sans-serif
-*/
-@import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;1,200&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap');
-
-/* Tailwind Engine Directives */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 :root {
     /* 2. CHOOSE YOUR FONTS FOR EACH TYPE OF TEXT HERE: */
 
