@@ -13,7 +13,7 @@ const getUsers = async (req, res, next) => {
     const skip  = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
-      User.find({}).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit),
+      User.find({}).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
       User.countDocuments({}),
     ]);
 

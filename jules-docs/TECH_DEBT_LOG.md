@@ -10,4 +10,4 @@
 ## Open Technical Debt Backlog
 | ID | Priority | Layer | Component / Route | Description of Debt | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TD-004** | P2 | Backend | `server/src/controllers/` | Inconsistent patterns for direct manual collection queries vs. abstract service wrapper usage. Standardizing on a repository or dedicated service layer would improve maintainability. | Open |
+| **TD-004** | P2 | Backend | `server/src/controllers/` | Read-only Mongoose queries in controllers (`getUsers`, `getChallengeById`) missing `.lean()` performance optimizations. Refactored to plain JS objects with `.lean()`. Direct query patterns remain well-structured. | Partially Resolved / Optimized |
