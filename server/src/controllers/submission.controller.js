@@ -588,7 +588,7 @@ const getSubmissionsByUsername = async (req, res, next) => {
   try {
     const { username } = req.params;
     const User = require('../models/User');
-    const targetUser = await User.findOne({ username: { $regex: new RegExp(`^${username}$`, 'i') } });
+    const targetUser = await User.findOne({ username: username.toLowerCase() });
     if (!targetUser) {
       res.status(404);
       throw new Error('User not found');
