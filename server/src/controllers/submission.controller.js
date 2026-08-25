@@ -134,7 +134,8 @@ const getSubmissions = async (req, res, next) => {
         .populate('reviewedBy', 'username role')
         .sort(sort)
         .skip(skip)
-        .limit(safeLimit),
+        .limit(safeLimit)
+        .lean(),
     ]);
 
     return sendSuccess(res, {
@@ -159,7 +160,8 @@ const getMySubmissions = async (req, res, next) => {
 
     let query = Submission.find(filter)
       .populate('challengeId', 'title difficulty points')
-      .sort({ submittedAt: -1 });
+      .sort({ submittedAt: -1 })
+      .lean();
 
     const limit = req.query.limit ? Number(req.query.limit) : 100;
     query = query.limit(limit);
@@ -378,7 +380,8 @@ const getSubmissionById = async (req, res, next) => {
     const submission = await Submission.findById(req.params.id)
       .populate('userId', 'username email role clan')
       .populate('challengeId', 'title difficulty points')
-      .populate('reviewedBy', 'username role');
+      .populate('reviewedBy', 'username role')
+      .lean();
 
     if (!submission) {
       res.status(404);
@@ -588,7 +591,7 @@ const getSubmissionsByUsername = async (req, res, next) => {
   try {
     const { username } = req.params;
     const User = require('../models/User');
-    const targetUser = await User.findOne({ username: { $regex: new RegExp(`^${username}$`, 'i') } });
+    const targetUser = await User.findOne({ username: username.toLowerCase() });
     if (!targetUser) {
       res.status(404);
       throw new Error('User not found');
@@ -597,7 +600,8 @@ const getSubmissionsByUsername = async (req, res, next) => {
     const filter = { userId: targetUser._id };
     let query = Submission.find(filter)
       .populate('challengeId', 'title difficulty points')
-      .sort({ submittedAt: -1 });
+      .sort({ submittedAt: -1 })
+      .lean();
 
     if (req.query.limit) {
       query = query.limit(Number(req.query.limit));
