@@ -63,3 +63,20 @@
   - Formally validated that the `Object.defineProperty` approach is the only secure way to sanitize request getters under Express 5's prototype-based getter architecture, ensuring zero regressions on the NoSQL parameter query injection sanitizer.
 - **Status:** All 25 integration tests passing with 100% green status.
 - **Next Run Priority Agenda:** Continuous codebase monitoring, refining user title management, and standard maintenance.
+
+## Run #5 - Daily Loop Standard Maintenance (August 10, 2026)
+- **Cycle Mode:** STANDARD MAINTENANCE MODE
+- **Files Modified:**
+  - `server/src/controllers/auth.controller.js` (refactored `claimUsername` and `checkUsername` lookups to use `username.toLowerCase()` for B-Tree index utilization)
+  - `server/src/controllers/badge.controller.js` (refactored `getBadgesForUsername` to query via direct lowercased username index)
+  - `server/src/controllers/dashboard.controller.js` (optimized `getUserProfile` username lookup and added `.lean()` to read-only dashboard activity queries)
+  - `server/src/controllers/submission.controller.js` (optimized `getSubmissionsByUsername` index usage and added `.lean()` to read-only submission queries)
+  - `jules-docs/ARCHITECTURE_GRAPH.md` (updated index utilization and read-only query documentation)
+  - `jules-docs/CUSTOM_LOGIC_REGISTRY.md` (updated username index query contracts)
+  - `jules-docs/SECURITY_LOG.md` (recorded SEC-004 regex query bottleneck & ReDoS prevention audit)
+  - `jules-docs/TECH_DEBT_LOG.md` (resolved TD-005 username index & `.lean()` query optimization task)
+  - `jules-docs/RUN_LOG.md` (appended Run #5 maintenance log entry)
+- **Bugs Fixed:** Eliminated dynamic case-insensitive `$regex` table-scan query bottlenecks across public profile and submission routes by leveraging Mongoose `{ username: 1 }` partial B-Tree index.
+- **Security Vulnerabilities Patched:** Prevented potential ReDoS / query latency exhaustion attacks on username lookup endpoints by replacing arbitrary user-supplied regex constructions with deterministic lowercased string matches.
+- **Status:** All 25 integration tests passing with 100% green status.
+- **Next Run Priority Agenda:** Continuous health monitoring, optimizing aggregation pipelines, and maintaining system security and performance.

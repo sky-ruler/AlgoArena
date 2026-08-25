@@ -299,7 +299,7 @@ const claimUsername = async (req, res, next) => {
 
     // Check uniqueness (case-insensitive)
     const existing = await User.findOne({
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      username: username.toLowerCase(),
       _id: { $ne: req.user.id },
     });
 
@@ -375,7 +375,7 @@ const checkUsername = async (req, res, next) => {
     }
 
     const query = {
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      username: username.toLowerCase(),
     };
 
     if (currentUserId) {

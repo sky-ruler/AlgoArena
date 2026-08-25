@@ -67,7 +67,8 @@ const getDashboardSummary = async (req, res, next) => {
     const recentActivity = await Submission.find({ userId: req.user.id })
       .populate('challengeId', 'title difficulty points')
       .sort({ submittedAt: -1 })
-      .limit(5);
+      .limit(5)
+      .lean();
 
     const rank = await getUserRank(new mongoose.Types.ObjectId(req.user.id));
 
@@ -221,7 +222,8 @@ const getProfileStats = async (req, res, next) => {
     const recentSubmissions = await Submission.find({ userId: req.user.id })
       .populate('challengeId', 'title difficulty points')
       .sort({ submittedAt: -1 })
-      .limit(10);
+      .limit(10)
+      .lean();
 
     // Get XP breakdown
     const { loginXp, loginCount, challengeXp } = await getLoginXpStats(userId, user.points);
@@ -269,7 +271,7 @@ const getUserProfile = async (req, res, next) => {
     if (req.params.userId) {
       user = await User.findById(req.params.userId).populate('clan', 'name tag').populate('featuredBadge');
     } else if (req.params.username) {
-      user = await User.findOne({ username: { $regex: new RegExp(`^${req.params.username}$`, 'i') } }).populate('clan', 'name tag').populate('featuredBadge');
+      user = await User.findOne({ username: req.params.username.toLowerCase() }).populate('clan', 'name tag').populate('featuredBadge');
     }
 
     if (!user) {
@@ -381,7 +383,8 @@ const getUserProfile = async (req, res, next) => {
     const recentSubmissions = await Submission.find({ userId })
       .populate('challengeId', 'title difficulty points')
       .sort({ submittedAt: -1 })
-      .limit(10);
+      .limit(10)
+      .lean();
 
     // Get XP breakdown
     const { loginXp, loginCount, challengeXp } = await getLoginXpStats(userId, user.points);
@@ -568,7 +571,8 @@ const getAdminDashboardSummary = async (req, res, next) => {
       .select('username email points solvedProblems streak codingLevel clan')
       .populate('clan', 'name tag')
       .sort({ points: -1 })
-      .limit(10);
+      .limit(10)
+      .lean();
 
     // Daily submissions activity (last 14 days)
     const fourteenDaysAgo = new Date();
