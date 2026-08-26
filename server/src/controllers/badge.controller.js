@@ -31,10 +31,8 @@ exports.getBadgesForUser = async (req, res, next) => {
 // @access  Public / Private
 exports.getBadgesForUsername = async (req, res, next) => {
   try {
-    const escapedUsername = req.params.username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const user = await User.findOne({
-      username: { $regex: new RegExp(`^${escapedUsername}$`, 'i') }
-    }).select('_id username');
+    const username = (req.params.username || '').toLowerCase();
+    const user = await User.findOne({ username }).select('_id username').lean();
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
