@@ -63,3 +63,20 @@
   - Formally validated that the `Object.defineProperty` approach is the only secure way to sanitize request getters under Express 5's prototype-based getter architecture, ensuring zero regressions on the NoSQL parameter query injection sanitizer.
 - **Status:** All 25 integration tests passing with 100% green status.
 - **Next Run Priority Agenda:** Continuous codebase monitoring, refining user title management, and standard maintenance.
+
+## Run #5 - Daily Loop Standard Maintenance (August 10, 2026)
+- **Cycle Mode:** STANDARD MAINTENANCE MODE
+- **Files Modified:**
+  - `server/src/models/Clan.fixed.js` (removed dead, unreferenced residual model file)
+  - `server/src/controllers/submission.controller.js` (refactored `getSubmissionsByUsername` to use B-tree indexed `{ username: username.toLowerCase() }` and `.lean()`)
+  - `server/src/controllers/auth.controller.js` (refactored `claimUsername` and `checkUsername` lookups to use exact lowercased query for B-tree index utilization)
+  - `server/src/controllers/badge.controller.js` (refactored `getBadgesForUsername` to use B-tree index lookups and `.lean()`)
+  - `server/src/controllers/dashboard.controller.js` (refactored `getUserProfile` username lookup to use lowercased indexed query)
+  - `jules-docs/TECH_DEBT_LOG.md` (updated open tech debt status)
+  - `jules-docs/RUN_LOG.md` (recorded Run #5 maintenance entry)
+- **Bugs Fixed:** Cleaned up leftover unreferenced model file `Clan.fixed.js`.
+- **Performance & Database Optimizations:**
+  - Replaced un-indexed case-insensitive `$regex` queries across controllers with lowercased exact queries (`username.toLowerCase()`) to leverage MongoDB's native B-Tree index on `{ username: 1 }`, avoiding full collection scans.
+  - Applied `.lean()` execution to read-only profile and submission database calls.
+- **Status:** All 25 integration tests passing with 100% green status; client and admin-client building cleanly without warnings.
+- **Next Run Priority Agenda:** Continuous database query optimization, tracking active sessions, and routine code quality checks.

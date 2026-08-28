@@ -297,11 +297,19 @@ const claimUsername = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'All fields (name, regNo, branch, year, section) are required' });
     }
 
-    // Check uniqueness (case-insensitive)
-    const existing = await User.findOne({
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
+    // Check uniqueness (case-insensitive via B-tree indexed lowercase query with fallback)
+    const cleanUsername = username.trim().toLowerCase();
+    let existing = await User.findOne({
+      username: cleanUsername,
       _id: { $ne: req.user.id },
     });
+    if (!existing) {
+      const escaped = cleanUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      existing = await User.findOne({
+        username: { $regex: new RegExp(`^${escaped}$`, 'i') },
+        _id: { $ne: req.user.id },
+      });
+    }
 
     if (existing) {
       return res.status(409).json({ success: false, message: 'Username is already taken' });
@@ -374,15 +382,26 @@ const checkUsername = async (req, res, next) => {
       }
     }
 
+    const cleanUsername = username.trim().toLowerCase();
     const query = {
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      username: cleanUsername,
     };
 
     if (currentUserId) {
       query._id = { $ne: currentUserId };
     }
 
-    const existing = await User.findOne(query);
+    let existing = await User.findOne(query);
+    if (!existing) {
+      const escaped = cleanUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const fallbackQuery = {
+        username: { $regex: new RegExp(`^${escaped}$`, 'i') }
+      };
+      if (currentUserId) {
+        fallbackQuery._id = { $ne: currentUserId };
+      }
+      existing = await User.findOne(fallbackQuery);
+    }
 
     return res.json({
       success: true,

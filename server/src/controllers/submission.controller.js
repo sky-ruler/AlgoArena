@@ -587,8 +587,17 @@ const updateSubmissionStatus = async (req, res, next) => {
 const getSubmissionsByUsername = async (req, res, next) => {
   try {
     const { username } = req.params;
+    if (!username) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+    const cleanUsername = username.trim().toLowerCase();
     const User = require('../models/User');
-    const targetUser = await User.findOne({ username: { $regex: new RegExp(`^${username}$`, 'i') } });
+    let targetUser = await User.findOne({ username: cleanUsername }).lean();
+    if (!targetUser) {
+      const escaped = cleanUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      targetUser = await User.findOne({ username: { $regex: new RegExp(`^${escaped}$`, 'i') } }).lean();
+    }
     if (!targetUser) {
       res.status(404);
       throw new Error('User not found');
@@ -603,7 +612,7 @@ const getSubmissionsByUsername = async (req, res, next) => {
       query = query.limit(Number(req.query.limit));
     }
 
-    const submissions = await query;
+    const submissions = await query.lean();
 
     return sendSuccess(res, {
       data: submissions,
