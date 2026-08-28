@@ -269,7 +269,12 @@ const getUserProfile = async (req, res, next) => {
     if (req.params.userId) {
       user = await User.findById(req.params.userId).populate('clan', 'name tag').populate('featuredBadge');
     } else if (req.params.username) {
-      user = await User.findOne({ username: { $regex: new RegExp(`^${req.params.username}$`, 'i') } }).populate('clan', 'name tag').populate('featuredBadge');
+      const cleanUsername = req.params.username.trim().toLowerCase();
+      user = await User.findOne({ username: cleanUsername }).populate('clan', 'name tag').populate('featuredBadge');
+      if (!user) {
+        const escaped = cleanUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        user = await User.findOne({ username: { $regex: new RegExp(`^${escaped}$`, 'i') } }).populate('clan', 'name tag').populate('featuredBadge');
+      }
     }
 
     if (!user) {
