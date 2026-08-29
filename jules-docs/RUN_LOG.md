@@ -63,3 +63,18 @@
   - Formally validated that the `Object.defineProperty` approach is the only secure way to sanitize request getters under Express 5's prototype-based getter architecture, ensuring zero regressions on the NoSQL parameter query injection sanitizer.
 - **Status:** All 25 integration tests passing with 100% green status.
 - **Next Run Priority Agenda:** Continuous codebase monitoring, refining user title management, and standard maintenance.
+
+## Run #5 - Daily Loop Standard Maintenance (August 10, 2026)
+- **Cycle Mode:** STANDARD MAINTENANCE MODE
+- **Files Modified:**
+  - `server/src/controllers/submission.controller.js` (optimized username query to `{ username: username.toLowerCase() }`)
+  - `server/src/controllers/dashboard.controller.js` (optimized username profile query to `{ username: req.params.username.toLowerCase() }`)
+  - `server/src/controllers/badge.controller.js` (optimized badge lookup query to `{ username: req.params.username.toLowerCase() }`)
+  - `server/src/controllers/auth.controller.js` (optimized username uniqueness and availability check queries)
+  - `jules-docs/TECH_DEBT_LOG.md` (resolved TD-004)
+  - `jules-docs/RUN_LOG.md` (recorded Run #5 maintenance entry)
+- **Bugs Fixed:** None.
+- **Performance & Architectural Optimizations:**
+  - Replaced un-indexed, high-overhead dynamic regex username queries (`{ username: { $regex: ... } }`) across controllers with lowercased exact matching (`{ username: username.toLowerCase() }`). This enables MongoDB B-Tree index scan utilization and prevents database bottlenecks.
+- **Status:** All 25 integration tests passing with 100% green status.
+- **Next Run Priority Agenda:** Continuous health monitoring, refining user title management, and standard maintenance.
