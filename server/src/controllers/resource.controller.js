@@ -7,7 +7,7 @@ exports.getResources = async (req, res, next) => {
   try {
     const { folder } = req.query;
     const filter = folder ? { folder } : {};
-    const resources = await Resource.find(filter).sort('-createdAt');
+    const resources = await Resource.find(filter).sort('-createdAt').lean();
     res.status(200).json({ success: true, data: resources });
   } catch (error) {
     next(error);
