@@ -14,11 +14,13 @@ const questionSetSchema = new mongoose.Schema({
   },
   weekNumber: {
     type: Number,
-    required: true
+    required: true,
+    index: true
   },
   deadline: {
     type: Date,
-    required: true
+    required: true,
+    index: true
   },
   targetLevel: {
     type: String,
@@ -62,7 +64,8 @@ const questionSetSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['Draft', 'Published'],
-    default: 'Published'
+    default: 'Published',
+    index: true
   }
 }, {
   timestamps: true

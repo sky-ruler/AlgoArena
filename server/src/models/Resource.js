@@ -5,7 +5,8 @@ const resourceSchema = new mongoose.Schema({
   folder: { 
     type: String, 
     enum: ['Arrays', 'Linked Lists', 'DP', 'Graphs', 'Trees', 'Stacks & Queues', 'Strings', 'Sorting', 'Solutions'],
-    required: true 
+    required: true,
+    index: true
   },
   type: { type: String, enum: ['PDF', 'JSON', 'LINK'], required: true },
   // External link (LINK type) or, for uploaded files, the relative file endpoint.
@@ -16,7 +17,7 @@ const resourceSchema = new mongoose.Schema({
   mimeType: { type: String },
   sizeBytes: { type: Number },
   isSolution: { type: Boolean, default: false },
-  uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Resource', resourceSchema);

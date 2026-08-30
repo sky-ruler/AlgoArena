@@ -24,6 +24,8 @@
 | `POST /api/submissions` | POST | protect, validate(submissionCreateSchema) | submitCode | Submission, Challenge, User |
 | `PUT /api/users/:id/ban` | PUT | protect, admin | banUser | User, AuditLog |
 | `POST /api/users/:id/warn` | POST | protect, admin | warnUser | User, AuditLog |
+| `GET /api/resources` | GET | protect | getResources (lean) | Resource |
+| `GET /api/question-sets` | GET | protect | getQuestionSets (lean) | QuestionSet |
 
 ## 3. Database Schema Graph (MongoDB / Mongoose)
 | Collection | Key Fields | Indexes | Unbounded Growth Risk | Missing Validations |
@@ -32,7 +34,9 @@
 | `challenges` | title, description, difficulty, points, codeSnippets | `{ createdAt: -1 }`, `{ difficulty: 1, category: 1 }`, text index on `{ title, description }` | Low | None |
 | `submissions` | challengeId, userId, code, language, status | `{ userId: 1, submittedAt: -1 }`, `{ challengeId: 1, submittedAt: -1 }` | Medium (high-frequency user code runs) | None |
 | `clans` | name, tag, chief, members, requests, status | `{ name: 1 }` (partial), `{ tag: 1 }` (partial) | Low (clan limit prevents unbounded size) | None |
-| `auditlogs` | action, targetUserId, performedBy, previousValue, newValue | None (immutable inserts only) | Low (only admin moderation actions logged) | None |
+| `auditlogs` | action, targetUserId, performedBy, previousValue, newValue | `{ targetUserId: 1 }`, `{ performedBy: 1 }`, `{ timestamp: 1 }` (immutable inserts only) | Low (only admin moderation actions logged) | None |
+| `resources` | title, folder, type, url, uploadedBy | `{ folder: 1 }`, `{ uploadedBy: 1 }` | Low | None |
+| `questionsets` | title, weekNumber, deadline, targetLevel, status | `{ weekNumber: 1 }`, `{ deadline: 1 }`, `{ status: 1 }` | Low | None |
 
 ## 4. Full-Stack Sync Points
 | Data Variable | Frontend Location | Backend Validation | Database Constraint | In Sync? |

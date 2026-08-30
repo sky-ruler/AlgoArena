@@ -9,7 +9,7 @@ const { getPointsForDifficulty } = require('../../utils/xp');
 
 const getQuestionSets = async (req, res, next) => {
   try {
-    const sets = await QuestionSet.find().sort({ weekNumber: -1, createdAt: -1 });
+    const sets = await QuestionSet.find().sort({ weekNumber: -1, createdAt: -1 }).lean();
     return sendSuccess(res, { data: sets });
   } catch (err) {
     return next(err);
@@ -18,7 +18,7 @@ const getQuestionSets = async (req, res, next) => {
 
 const getQuestionSetById = async (req, res, next) => {
   try {
-    const set = await QuestionSet.findById(req.params.id);
+    const set = await QuestionSet.findById(req.params.id).lean();
     if (!set) {
       res.status(404);
       throw new Error('Question Set not found');
