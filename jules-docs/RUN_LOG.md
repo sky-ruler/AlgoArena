@@ -63,3 +63,14 @@
   - Formally validated that the `Object.defineProperty` approach is the only secure way to sanitize request getters under Express 5's prototype-based getter architecture, ensuring zero regressions on the NoSQL parameter query injection sanitizer.
 - **Status:** All 25 integration tests passing with 100% green status.
 - **Next Run Priority Agenda:** Continuous codebase monitoring, refining user title management, and standard maintenance.
+
+## Run #5 - Daily Loop Standard Maintenance (August 12, 2026)
+- **Cycle Mode:** STANDARD MAINTENANCE MODE
+- **Files Modified:**
+  - `server/src/controllers/submission.controller.js` (refactored `getSubmissionsByUsername` to use indexed lowercased exact matching `{ username: username.toLowerCase() }` instead of dynamic regex scan)
+  - `jules-docs/TECH_DEBT_LOG.md` (recorded resolution of TD-005 username regex lookup optimization)
+  - `jules-docs/RUN_LOG.md` (updated execution log with Run #5 details)
+- **Bugs Fixed / Optimizations:** Eliminated database table scans in `getSubmissionsByUsername` by utilizing the B-Tree `{ username: 1 }` index on lowercased user lookup.
+- **Security Vulnerabilities Patched:** Audited OWASP Top 10 layers; input sanitization, RBAC, CORS, and AuditLog immutability remain fully enforced.
+- **Status:** All 25 integration tests passing with 100% green status.
+- **Next Run Priority Agenda:** Continue standard maintenance daily cycle, optimize query pipelines across user profile routes, and monitor high-frequency submissions.
