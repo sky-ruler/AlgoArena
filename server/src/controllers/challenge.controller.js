@@ -136,7 +136,7 @@ const getChallenges = async (req, res, next) => {
       const sort = { [sortBy]: sortOrder };
       const [totalCount, findResults] = await Promise.all([
         Challenge.countDocuments(filter),
-        Challenge.find(filter).populate('questionSetId').sort(sort).skip(skip).limit(safeLimit),
+        Challenge.find(filter).populate('questionSetId').sort(sort).skip(skip).limit(safeLimit).lean(),
       ]);
       total = totalCount;
       challenges = findResults;
@@ -183,7 +183,7 @@ const getChallenges = async (req, res, next) => {
 
 const getChallengeById = async (req, res, next) => {
   try {
-    const challenge = await Challenge.findById(req.params.id);
+    const challenge = await Challenge.findById(req.params.id).lean();
 
     if (!challenge) {
       res.status(404);
