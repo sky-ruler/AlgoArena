@@ -134,7 +134,8 @@ const getSubmissions = async (req, res, next) => {
         .populate('reviewedBy', 'username role')
         .sort(sort)
         .skip(skip)
-        .limit(safeLimit),
+        .limit(safeLimit)
+        .lean(),
     ]);
 
     return sendSuccess(res, {
@@ -162,7 +163,7 @@ const getMySubmissions = async (req, res, next) => {
       .sort({ submittedAt: -1 });
 
     const limit = req.query.limit ? Number(req.query.limit) : 100;
-    query = query.limit(limit);
+    query = query.limit(limit).lean();
 
     const submissions = await query;
 
@@ -588,7 +589,7 @@ const getSubmissionsByUsername = async (req, res, next) => {
   try {
     const { username } = req.params;
     const User = require('../models/User');
-    const targetUser = await User.findOne({ username: { $regex: new RegExp(`^${username}$`, 'i') } });
+    const targetUser = await User.findOne({ username: username.toLowerCase() }).lean();
     if (!targetUser) {
       res.status(404);
       throw new Error('User not found');
@@ -603,7 +604,7 @@ const getSubmissionsByUsername = async (req, res, next) => {
       query = query.limit(Number(req.query.limit));
     }
 
-    const submissions = await query;
+    const submissions = await query.lean();
 
     return sendSuccess(res, {
       data: submissions,

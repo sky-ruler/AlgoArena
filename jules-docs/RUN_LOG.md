@@ -63,3 +63,19 @@
   - Formally validated that the `Object.defineProperty` approach is the only secure way to sanitize request getters under Express 5's prototype-based getter architecture, ensuring zero regressions on the NoSQL parameter query injection sanitizer.
 - **Status:** All 25 integration tests passing with 100% green status.
 - **Next Run Priority Agenda:** Continuous codebase monitoring, refining user title management, and standard maintenance.
+
+## Run #5 - Daily Loop Standard Maintenance (August 10, 2026)
+- **Cycle Mode:** STANDARD MAINTENANCE MODE
+- **Files Modified:**
+  - `server/src/controllers/dashboard.controller.js` (refactored `getUserProfile` to query `{ username: req.params.username.toLowerCase() }`, enabling MongoDB B-Tree index utilization)
+  - `server/src/controllers/submission.controller.js` (refactored `getSubmissionsByUsername` to query `{ username: username.toLowerCase() }` and added `.lean()` to `getSubmissions`, `getMySubmissions`, and `getSubmissionsByUsername`)
+  - `server/src/controllers/challenge.controller.js` (added `.lean()` to `getChallenges` and `getChallengeById` read queries)
+  - `server/src/controllers/user.controller.js` (added `.lean()` to `getUsers` read query)
+  - `server/tests/api.integration.test.js` (added integration test case verifying lowercased username index optimization)
+  - `jules-docs/ARCHITECTURE_GRAPH.md` (updated MongoDB schema graph and username B-Tree index notes)
+  - `jules-docs/CUSTOM_LOGIC_REGISTRY.md` (registered lowercased username B-Tree index lookup logic)
+  - `jules-docs/TECH_DEBT_LOG.md` (resolved TD-004 query optimization task)
+- **Bugs Fixed:** Replaced un-indexed dynamic case-insensitive regex queries on username fields with lowercased index-leveraging lookups.
+- **Security Vulnerabilities Patched:** None (verified existing security hardening in authentication, RBAC, NoSQL sanitization, and CORS headers).
+- **Status:** All 26 integration tests passing with 100% green status.
+- **Next Run Priority Agenda:** Continuous codebase health monitoring, frontend component memoization audits, and standard maintenance.

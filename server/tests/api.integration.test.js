@@ -1567,3 +1567,24 @@ test('AuditLog immutability and administrative status actions logging', async ()
   );
 });
 
+test('user profile and submission lookups by username execute via lowercased string matching for index optimization', async () => {
+  const user = await registerUser({ username: 'Index_User_Tester', email: 'index.tester@example.com' });
+
+  // 1. Fetch user profile with mixed-case username
+  const profileRes = await request(app)
+    .get('/api/profile/username/InDeX_uSeR_tEsTeR')
+    .set('Authorization', `Bearer ${user.token}`);
+
+  assert.equal(profileRes.status, 200);
+  assert.equal(profileRes.body.success, true);
+  assert.equal(profileRes.body.data.username, 'index_user_tester');
+
+  // 2. Fetch submissions by username with mixed-case
+  const subRes = await request(app)
+    .get('/api/submissions/user/InDeX_uSeR_tEsTeR')
+    .set('Authorization', `Bearer ${user.token}`);
+
+  assert.equal(subRes.status, 200);
+  assert.equal(subRes.body.success, true);
+  assert.ok(Array.isArray(subRes.body.data));
+});

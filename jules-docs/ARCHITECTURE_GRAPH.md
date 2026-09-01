@@ -28,7 +28,7 @@
 ## 3. Database Schema Graph (MongoDB / Mongoose)
 | Collection | Key Fields | Indexes | Unbounded Growth Risk | Missing Validations |
 | :--- | :--- | :--- | :--- | :--- |
-| `users` | firebaseUid, email, username, role, points, status | `{ username: 1 }` (partial), `{ regNo: 1 }` (partial), `{ points: -1, solvedProblems: -1 }` | Low | None (uses custom format validation regexes) |
+| `users` | firebaseUid, email, username, role, points, status | `{ username: 1 }` (partial unique for string), `{ regNo: 1 }` (partial unique), `{ points: -1, solvedProblems: -1 }` | Low | None (uses custom format validation regexes; username queries use lowercased string matching for B-Tree index utilization) |
 | `challenges` | title, description, difficulty, points, codeSnippets | `{ createdAt: -1 }`, `{ difficulty: 1, category: 1 }`, text index on `{ title, description }` | Low | None |
 | `submissions` | challengeId, userId, code, language, status | `{ userId: 1, submittedAt: -1 }`, `{ challengeId: 1, submittedAt: -1 }` | Medium (high-frequency user code runs) | None |
 | `clans` | name, tag, chief, members, requests, status | `{ name: 1 }` (partial), `{ tag: 1 }` (partial) | Low (clan limit prevents unbounded size) | None |
